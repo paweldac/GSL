@@ -25,9 +25,10 @@
 #include <string>    // for basic_string, operator==, string, operator<<
 #include <typeinfo>  // for type_info
 
-namespace gsl {
+namespace gsl
+{
 struct fail_fast;
-}  // namespace gsl
+} // namespace gsl
 
 using namespace gsl;
 
@@ -56,51 +57,10 @@ struct CustomPtr
 {
     CustomPtr(T* p) : p_(p) {}
     operator T*() { return p_; }
+    T* get() const { return p_; }
     bool operator!=(std::nullptr_t) const { return p_ != nullptr; }
     T* p_ = nullptr;
 };
-
-template <typename T, typename U>
-std::string operator==(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
-{
-    return reinterpret_cast<const void*>(lhs.p_) == reinterpret_cast<const void*>(rhs.p_) ? "true"
-                                                                                          : "false";
-}
-
-template <typename T, typename U>
-std::string operator!=(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
-{
-    return reinterpret_cast<const void*>(lhs.p_) != reinterpret_cast<const void*>(rhs.p_) ? "true"
-                                                                                          : "false";
-}
-
-template <typename T, typename U>
-std::string operator<(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
-{
-    return reinterpret_cast<const void*>(lhs.p_) < reinterpret_cast<const void*>(rhs.p_) ? "true"
-                                                                                         : "false";
-}
-
-template <typename T, typename U>
-std::string operator>(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
-{
-    return reinterpret_cast<const void*>(lhs.p_) > reinterpret_cast<const void*>(rhs.p_) ? "true"
-                                                                                         : "false";
-}
-
-template <typename T, typename U>
-std::string operator<=(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
-{
-    return reinterpret_cast<const void*>(lhs.p_) <= reinterpret_cast<const void*>(rhs.p_) ? "true"
-                                                                                          : "false";
-}
-
-template <typename T, typename U>
-std::string operator>=(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
-{
-    return reinterpret_cast<const void*>(lhs.p_) >= reinterpret_cast<const void*>(rhs.p_) ? "true"
-                                                                                          : "false";
-}
 
 struct NonCopyableNonMovable
 {
@@ -136,7 +96,7 @@ TEST_CASE("TestNotNullConstructors")
         std::make_shared<int>(10)); // shared_ptr<int> is nullptr assignable
 }
 
-template<typename T>
+template <typename T>
 void ostream_helper(T v)
 {
     not_null<T*> p(&v);
@@ -166,7 +126,6 @@ TEST_CASE("TestNotNullostream")
     ostream_helper<const char*>("cstring");
     ostream_helper<std::string>("string");
 }
-
 
 TEST_CASE("TestNotNullCasting")
 {
@@ -227,7 +186,6 @@ TEST_CASE("TestNotNullRawPointerComparison")
     CHECK((NotNull1(p1) <= NotNull1(p1)) == true);
     CHECK((NotNull1(p1) <= NotNull2(p2)) == (p1 <= p2));
     CHECK((NotNull2(p2) <= NotNull1(p1)) == (p2 <= p1));
-
 }
 
 TEST_CASE("TestNotNullDereferenceOperator")
@@ -236,12 +194,12 @@ TEST_CASE("TestNotNullDereferenceOperator")
         auto sp1 = std::make_shared<NonCopyableNonMovable>();
 
         using NotNullSp1 = not_null<decltype(sp1)>;
-        CHECK(typeid(*sp1) == typeid(*NotNullSp1(sp1))); 
+        CHECK(typeid(*sp1) == typeid(*NotNullSp1(sp1)));
         CHECK(std::addressof(*NotNullSp1(sp1)) == std::addressof(*sp1));
     }
 
     {
-        int ints[1] = { 42 };
+        int ints[1] = {42};
         CustomPtr<int> p1(&ints[0]);
 
         using NotNull1 = not_null<decltype(p1)>;
@@ -300,25 +258,70 @@ TEST_CASE("TestNotNullCustomPtrComparison")
     using NotNull1 = not_null<decltype(p1)>;
     using NotNull2 = not_null<decltype(p2)>;
 
-    CHECK((NotNull1(p1) == NotNull1(p1)) == "true");
-    CHECK((NotNull1(p1) == NotNull2(p2)) == "false");
+    CHECK((NotNull1(p1) == NotNull1(p1)) == true);
+    CHECK((NotNull1(p1) == NotNull2(p2)) == false);
 
-    CHECK((NotNull1(p1) != NotNull1(p1)) == "false");
-    CHECK((NotNull1(p1) != NotNull2(p2)) == "true");
+    CHECK((NotNull1(p1) != NotNull1(p1)) == false);
+    CHECK((NotNull1(p1) != NotNull2(p2)) == true);
 
-    CHECK((NotNull1(p1) < NotNull1(p1)) == "false");
+    CHECK((NotNull1(p1) < NotNull1(p1)) == false);
     CHECK((NotNull1(p1) < NotNull2(p2)) == (p1 < p2));
     CHECK((NotNull2(p2) < NotNull1(p1)) == (p2 < p1));
 
-    CHECK((NotNull1(p1) > NotNull1(p1)) == "false");
+    CHECK((NotNull1(p1) > NotNull1(p1)) == false);
     CHECK((NotNull1(p1) > NotNull2(p2)) == (p1 > p2));
     CHECK((NotNull2(p2) > NotNull1(p1)) == (p2 > p1));
 
-    CHECK((NotNull1(p1) <= NotNull1(p1)) == "true");
+    CHECK((NotNull1(p1) <= NotNull1(p1)) == true);
     CHECK((NotNull1(p1) <= NotNull2(p2)) == (p1 <= p2));
     CHECK((NotNull2(p2) <= NotNull1(p1)) == (p2 <= p1));
 
-    CHECK((NotNull1(p1) >= NotNull1(p1)) == "true");
+    CHECK((NotNull1(p1) >= NotNull1(p1)) == true);
     CHECK((NotNull1(p1) >= NotNull2(p2)) == (p1 >= p2));
     CHECK((NotNull2(p2) >= NotNull1(p1)) == (p2 >= p1));
+}
+
+TEST_CASE("TestNotNullSharedPtrRefCounting")
+{
+    auto sp = std::make_shared<int>(42);
+    auto sp_initial_ref_count = sp.use_count();
+
+    using NotNullSp = not_null<decltype(sp)>;
+    NotNullSp not_null_sp(sp); // new shared_ptr copy in not_null
+    CHECK(sp.use_count() == (sp_initial_ref_count + 1));
+
+    int* intptr = not_null_sp.get(); // get is returning underlying ptr
+    CHECK(sp.use_count() == (sp_initial_ref_count + 1));
+
+    int underlying_object = *not_null_sp;
+    CHECK(sp.use_count() == (sp_initial_ref_count + 1));
+
+    int* intptr2 = not_null_sp.operator->();
+    CHECK(sp.use_count() == (sp_initial_ref_count + 1));
+
+    const std::shared_ptr<int>& ptr3 = not_null_sp;
+    CHECK(sp.use_count() == (sp_initial_ref_count + 1));
+
+    (void)intptr;
+    (void)underlying_object;
+    (void)intptr2;
+    (void)ptr3;
+}
+
+TEST_CASE("TestNotNullUniquePtrUsage")
+{
+    auto up = std::make_unique<int>(42);
+
+    using NotNullUp = not_null<decltype(up)>;
+    NotNullUp not_null_up(std::move(up));
+
+    int* intptr = not_null_up.get(); // get is returning underlying ptr
+    int underlying_object = *not_null_up;
+    int* intptr2 = not_null_up.operator->();
+    const std::unique_ptr<int>& ptr3 = not_null_up;
+
+    (void)intptr;
+    (void)underlying_object;
+    (void)intptr2;
+    (void)ptr3;
 }
